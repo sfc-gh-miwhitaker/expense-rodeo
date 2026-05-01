@@ -14,7 +14,7 @@ AI_EXTRACT(TO_FILE(...), responseFormat)
 RECEIPTS_RAW (VARIANT)   ->   RECEIPTS (typed)
                                |
                                +--> V_SPEND_BY_CATEGORY, V_SPEND_BY_VENDOR
-                               +--> SV_RECEIPT_EXTRACTOR (semantic view)
+                               +--> SV_EXPENSE_RODEO (semantic view)
                                +--> RECEIPT_EXPLORER (Streamlit)
 ```
 
@@ -24,9 +24,9 @@ cron-driven from outside Snowflake.
 ## Snowflake Environment
 
 - Database: `SNOWFLAKE_EXAMPLE`
-- Schema:   `RECEIPT_EXTRACTOR`
-- Warehouse: `SFE_RECEIPT_EXTRACTOR_WH` (XSMALL)
-- Stage:    `@SNOWFLAKE_EXAMPLE.RECEIPT_EXTRACTOR.RECEIPTS_STAGE`
+- Schema:   `EXPENSE_RODEO`
+- Warehouse: `SFE_EXPENSE_RODEO_WH` (XSMALL)
+- Stage:    `@SNOWFLAKE_EXAMPLE.EXPENSE_RODEO.RECEIPTS_STAGE`
 
 ## Conventions
 

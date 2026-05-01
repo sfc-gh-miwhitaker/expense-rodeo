@@ -19,7 +19,7 @@ st.set_page_config(
 
 session = get_active_session()
 
-SCHEMA = "SNOWFLAKE_EXAMPLE.RECEIPT_EXTRACTOR"
+SCHEMA = "SNOWFLAKE_EXAMPLE.EXPENSE_RODEO"
 STAGE = f"@{SCHEMA}.RECEIPTS_STAGE"
 
 
@@ -69,11 +69,17 @@ if receipts.empty:
     st.warning("No receipts yet. Drop files in @RECEIPTS_STAGE and call SP_RECEIPT_EXTRACT_ALL().")
     st.stop()
 
-kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
 kpi1.metric("Receipts", f"{len(receipts):,}")
 kpi2.metric("Total spend", f"${receipts['TOTAL_AMOUNT'].sum():,.2f}")
 kpi3.metric("Avg receipt", f"${receipts['TOTAL_AMOUNT'].mean():,.2f}")
 kpi4.metric("Vendors", f"{receipts['VENDOR'].nunique():,}")
+kpi5.metric(
+    "Avg confidence",
+    f"{receipts['AVG_CONFIDENCE'].mean():.0%}" if "AVG_CONFIDENCE" in receipts else "-",
+    delta=f"{(receipts['AVG_CONFIDENCE'] < 0.80).sum()} to review" if "AVG_CONFIDENCE" in receipts else None,
+    delta_color="inverse",
+)
 
 st.divider()
 
@@ -109,12 +115,15 @@ left, right = st.columns([2, 3])
 with left:
     st.subheader("Receipts")
     st.dataframe(
-        filtered[["FILE_PATH", "VENDOR", "RECEIPT_DATE", "CATEGORY", "TOTAL_AMOUNT"]],
+        filtered[["FILE_PATH", "VENDOR", "RECEIPT_DATE", "CATEGORY", "TOTAL_AMOUNT", "AVG_CONFIDENCE"]],
         hide_index=True,
         use_container_width=True,
         column_config={
             "TOTAL_AMOUNT": st.column_config.NumberColumn("Total", format="$%.2f"),
             "RECEIPT_DATE": st.column_config.DateColumn("Date"),
+            "AVG_CONFIDENCE": st.column_config.ProgressColumn(
+                "Confidence", format="%.0f%%", min_value=0.0, max_value=1.0
+            ),
         },
     )
     choice = st.selectbox(
@@ -128,10 +137,14 @@ with right:
         st.subheader(row["VENDOR"] or "(unknown vendor)")
         st.caption(f"File: `{row['FILE_PATH']}`")
 
-        meta_a, meta_b, meta_c = st.columns(3)
+        meta_a, meta_b, meta_c, meta_d = st.columns(4)
         meta_a.metric("Date",   str(row["RECEIPT_DATE"]))
         meta_b.metric("Total",  f"${row['TOTAL_AMOUNT']:,.2f} {row['CURRENCY']}")
         meta_c.metric("Category", row["CATEGORY"] or "-")
+        meta_d.metric(
+            "Confidence",
+            f"{row['AVG_CONFIDENCE']:.0%}" if row.get("AVG_CONFIDENCE") is not None else "-",
+        )
 
         st.markdown("**Payment method:** " + (row["PAYMENT_METHOD"] or "-"))
 
@@ -169,7 +182,7 @@ with agg_right:
     st.bar_chart(by_vendor.set_index("VENDOR")["TOTAL_SPEND"])
 
 st.caption(
-    "Data source: `SNOWFLAKE_EXAMPLE.RECEIPT_EXTRACTOR.RECEIPTS` (populated via "
+    "Data source: `SNOWFLAKE_EXAMPLE.EXPENSE_RODEO.RECEIPTS` (populated via "
     "`SP_RECEIPT_EXTRACT_ALL`). Semantic view for Cortex Analyst: "
-    "`SNOWFLAKE_EXAMPLE.SEMANTIC_MODELS.SV_RECEIPT_EXTRACTOR`."
+    "`SNOWFLAKE_EXAMPLE.SEMANTIC_MODELS.SV_EXPENSE_RODEO`."
 )

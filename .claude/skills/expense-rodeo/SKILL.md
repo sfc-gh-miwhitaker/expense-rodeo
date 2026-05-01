@@ -26,13 +26,15 @@ RECEIPTS_STAGE -> AI_EXTRACT -> RECEIPTS_RAW -> RECEIPTS -> {views, SV, Streamli
 ## Snowflake Objects
 
 - Database: `SNOWFLAKE_EXAMPLE`
-- Schema:   `RECEIPT_EXTRACTOR`
-- Warehouse: `SFE_RECEIPT_EXTRACTOR_WH`
+- Schema:   `EXPENSE_RODEO`
+- Warehouse: `SFE_EXPENSE_RODEO_WH`
 - Stage:    `RECEIPTS_STAGE`
 - Tables:   `RECEIPTS_RAW`, `RECEIPTS`
 - Views:    `V_SPEND_BY_CATEGORY`, `V_SPEND_BY_VENDOR`
-- Semantic: `SNOWFLAKE_EXAMPLE.SEMANTIC_MODELS.SV_RECEIPT_EXTRACTOR`
+- Semantic: `SNOWFLAKE_EXAMPLE.SEMANTIC_MODELS.SV_EXPENSE_RODEO`
 - Streamlit: `RECEIPT_EXPLORER`
+- Git repo: `SNOWFLAKE_EXAMPLE.GIT_REPOS.EXPENSE_RODEO_REPO`
+- API integration: `SFE_GIT_API_INTEGRATION` (shared, public repos)
 
 ## Key Files
 
@@ -43,7 +45,7 @@ RECEIPTS_STAGE -> AI_EXTRACT -> RECEIPTS_RAW -> RECEIPTS -> {views, SV, Streamli
 | `sql/01_setup/01_create_schema.sql` | Database, schema, warehouse, stage, tables |
 | `sql/02_data/01_load_sample_data.sql` | PUTs sample receipts, refreshes stage |
 | `sql/04_cortex/01_extract_pipeline.sql` | `AI_EXTRACT` + flattening + procedure |
-| `sql/04_cortex/02_create_semantic_view.sql` | `SV_RECEIPT_EXTRACTOR` |
+| `sql/04_cortex/02_create_semantic_view.sql` | `SV_EXPENSE_RODEO` |
 | `sql/05_streamlit/01_create_dashboard.sql` | Deploys Streamlit from git |
 | `streamlit/streamlit_app.py` | Dashboard source |
 
@@ -70,6 +72,20 @@ RECEIPTS_STAGE -> AI_EXTRACT -> RECEIPTS_RAW -> RECEIPTS -> {views, SV, Streamli
 2. Re-run the extract procedure.
 3. No semantic-view change is needed -- the dimension is free-text.
 
+## Extension Playbook: tuning extraction for dense / small-text receipts
+
+`SP_RECEIPT_EXTRACT_ALL` takes a `SCALE_FACTOR` argument wired to
+`AI_EXTRACT(config => {'scale_factor': :SCALE_FACTOR})`. Valid range is
+1.0 - 4.0 (docs). Higher values improve OCR on dense or small-print receipts
+at the cost of more tokens and fewer pages per call.
+
+```sql
+-- Re-run with 2x scale for a small/dense batch
+CALL SP_RECEIPT_EXTRACT_ALL(2.0);
+```
+
+Use `V_LOW_CONFIDENCE_RECEIPTS` to find candidates that need re-extraction.
+
 ## Gotchas
 
 - **Stage refresh** -- after `PUT`ing new files you **must** call
@@ -90,3 +106,12 @@ RECEIPTS_STAGE -> AI_EXTRACT -> RECEIPTS_RAW -> RECEIPTS -> {views, SV, Streamli
 - **Directory-table VARIANT drift** -- if a file fails to parse, the VARIANT
   row still lands in `RECEIPTS_RAW` with NULLs; the `RECEIPTS` table skips any
   row where `extraction:response` is NULL.
+- **Line-items shape** -- `AI_EXTRACT` table extraction returns columns as
+  parallel arrays (`{description: [...], quantity: [...], ...}`). The MERGE in
+  `01_extract_pipeline.sql` transposes those back into an array of row-shaped
+  objects for the typed `LINE_ITEMS` VARIANT. If you add a column, update the
+  `column_ordering`, the schema block, AND the ARRAY_AGG transpose.
+- **Confidence scores** -- `scores => TRUE` returns one score per entity
+  field and one aggregate score per table field (`line_items`). The code
+  averages seven score fields; adding/removing an extracted field means
+  updating the divisor.

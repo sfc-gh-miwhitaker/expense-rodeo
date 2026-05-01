@@ -6,9 +6,9 @@ Pair-programmed by SE Community + Cortex Code | Expires: 2026-05-30
 
 USE SCHEMA SNOWFLAKE_EXAMPLE.SEMANTIC_MODELS;
 
-CREATE OR REPLACE SEMANTIC VIEW SV_RECEIPT_EXTRACTOR
+CREATE OR REPLACE SEMANTIC VIEW SV_EXPENSE_RODEO
     TABLES (
-        RECEIPTS AS SNOWFLAKE_EXAMPLE.RECEIPT_EXTRACTOR.RECEIPTS
+        RECEIPTS AS SNOWFLAKE_EXAMPLE.EXPENSE_RODEO.RECEIPTS
             PRIMARY KEY (FILE_PATH)
             WITH SYNONYMS ('receipts', 'expense receipts', 'expenses')
             COMMENT = 'One row per extracted employee expense receipt.'
@@ -16,7 +16,10 @@ CREATE OR REPLACE SEMANTIC VIEW SV_RECEIPT_EXTRACTOR
     FACTS (
         RECEIPTS.TOTAL_AMOUNT AS TOTAL_AMOUNT
             WITH SYNONYMS ('amount', 'total', 'receipt total', 'spend')
-            COMMENT = 'Grand total on the receipt in the receipt currency.'
+            COMMENT = 'Grand total on the receipt in the receipt currency.',
+        RECEIPTS.AVG_CONFIDENCE AS AVG_CONFIDENCE
+            WITH SYNONYMS ('confidence', 'extraction confidence', 'ai confidence', 'quality')
+            COMMENT = 'Average AI_EXTRACT per-field confidence score (0..1). Lower means human review is recommended.'
     )
     DIMENSIONS (
         RECEIPTS.VENDOR AS VENDOR
@@ -47,7 +50,14 @@ CREATE OR REPLACE SEMANTIC VIEW SV_RECEIPT_EXTRACTOR
             COMMENT = 'Number of receipts.',
         RECEIPTS.AVG_RECEIPT_AMOUNT AS AVG(RECEIPTS.TOTAL_AMOUNT)
             WITH SYNONYMS ('average receipt', 'avg spend')
-            COMMENT = 'Average receipt amount.'
+            COMMENT = 'Average receipt amount.',
+        RECEIPTS.AVG_EXTRACTION_CONFIDENCE AS AVG(RECEIPTS.AVG_CONFIDENCE)
+            WITH SYNONYMS ('average confidence', 'extraction quality', 'ai quality')
+            COMMENT = 'Mean per-receipt AI_EXTRACT confidence across the filtered set.',
+        RECEIPTS.LOW_CONFIDENCE_COUNT AS
+            COUNT_IF(RECEIPTS.AVG_CONFIDENCE < 0.80)
+            WITH SYNONYMS ('review queue', 'low confidence receipts')
+            COMMENT = 'Count of receipts with average confidence below 0.80 (review recommended).'
     )
     COMMENT = 'DEMO: Semantic view for Cortex Analyst over extracted receipts (Expires: 2026-05-30)';
 

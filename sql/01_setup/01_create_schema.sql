@@ -1,29 +1,13 @@
 /*==============================================================================
 SETUP - Expense Rodeo
-Creates schema, stage, and empty tables.
+Creates stage, tables, and other non-shared objects.
+Expected to be invoked via EXECUTE IMMEDIATE FROM deploy_all.sql (schema,
+warehouse, and database are created there).
 Pair-programmed by SE Community + Cortex Code | Expires: 2026-05-30
 ==============================================================================*/
 
-USE ROLE SYSADMIN;
-
-CREATE DATABASE IF NOT EXISTS SNOWFLAKE_EXAMPLE
-  COMMENT = 'Shared database for SE Community demo projects';
-
-CREATE SCHEMA IF NOT EXISTS SNOWFLAKE_EXAMPLE.RECEIPT_EXTRACTOR
-  COMMENT = 'DEMO: Receipt Extractor project (Expires: 2026-05-30)';
-
-CREATE SCHEMA IF NOT EXISTS SNOWFLAKE_EXAMPLE.SEMANTIC_MODELS
-  COMMENT = 'Shared schema for Cortex Analyst semantic views';
-
-CREATE WAREHOUSE IF NOT EXISTS SFE_RECEIPT_EXTRACTOR_WH
-  WAREHOUSE_SIZE = 'XSMALL'
-  AUTO_SUSPEND = 60
-  AUTO_RESUME = TRUE
-  INITIALLY_SUSPENDED = TRUE
-  COMMENT = 'DEMO: Receipt Extractor compute (Expires: 2026-05-30)';
-
-USE WAREHOUSE SFE_RECEIPT_EXTRACTOR_WH;
-USE SCHEMA SNOWFLAKE_EXAMPLE.RECEIPT_EXTRACTOR;
+USE WAREHOUSE SFE_EXPENSE_RODEO_WH;
+USE SCHEMA SNOWFLAKE_EXAMPLE.EXPENSE_RODEO;
 
 -- Stage for raw receipt files (PDFs + images). Directory table + SSE are
 -- required for AI_EXTRACT / TO_FILE.
@@ -51,7 +35,6 @@ CREATE TABLE IF NOT EXISTS RECEIPTS (
     PAYMENT_METHOD  VARCHAR,
     CATEGORY        VARCHAR,
     LINE_ITEMS      VARIANT,
+    AVG_CONFIDENCE  NUMBER(4,3),
     EXTRACTED_AT    TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
 ) COMMENT = 'DEMO: Typed receipt fact table (Expires: 2026-05-30)';
-
-SELECT 'Setup complete' AS status;

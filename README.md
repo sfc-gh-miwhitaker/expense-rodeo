@@ -17,7 +17,7 @@
 1. **Deploy** - Open `deploy_all.sql` in Snowsight, click Run All (~2 minutes).
 2. **Open the dashboard** - Find `RECEIPT_EXPLORER` under Streamlit in Snowsight.
 3. **Pick a receipt** - Browse the extracted fields side-by-side with the original file.
-4. **Ask questions** - Point Cortex Analyst at `SV_RECEIPT_EXTRACTOR` for natural-language spend queries.
+4. **Ask questions** - Point Cortex Analyst at `SV_EXPENSE_RODEO` for natural-language spend queries.
 5. **Cleanup** - Run `teardown_all.sql` when done.
 
 ## What It Does
@@ -33,21 +33,34 @@ language analytics.
 
 | Object | Type | Purpose |
 |--------|------|---------|
-| `SNOWFLAKE_EXAMPLE.RECEIPT_EXTRACTOR` | Schema | All project objects |
-| `SFE_RECEIPT_EXTRACTOR_WH` | Warehouse (XS) | Compute for extraction + UI |
+| `SFE_GIT_API_INTEGRATION` | API Integration | Git HTTPS integration for public SE Community repos |
+| `SNOWFLAKE_EXAMPLE` | Database | Shared database for SE Community demos |
+| `SNOWFLAKE_EXAMPLE.GIT_REPOS.EXPENSE_RODEO_REPO` | Git Repository | Mirrors github.com/sfc-gh-miwhitaker/expense-rodeo |
+| `SNOWFLAKE_EXAMPLE.EXPENSE_RODEO` | Schema | All project objects |
+| `SFE_EXPENSE_RODEO_WH` | Warehouse (XS) | Compute for extraction + UI |
 | `RECEIPTS_STAGE` | Stage | Landing zone for receipts (directory table, SSE) |
 | `RECEIPTS_RAW` | Table | Raw `AI_EXTRACT` output per file (VARIANT) |
-| `RECEIPTS` | Table | Flattened, typed fact table |
+| `RECEIPTS` | Table | Flattened, typed fact table (includes `AVG_CONFIDENCE`) |
+| `SP_RECEIPT_EXTRACT_ALL` | Procedure | Batch AI_EXTRACT + MERGE (optional `SCALE_FACTOR` arg) |
 | `V_SPEND_BY_CATEGORY` | View | Rollup for dashboard |
 | `V_SPEND_BY_VENDOR` | View | Rollup for dashboard |
-| `SV_RECEIPT_EXTRACTOR` | Semantic View | Cortex Analyst NL analytics |
+| `V_LOW_CONFIDENCE_RECEIPTS` | View | Review queue: confidence < 0.80 |
+| `SV_EXPENSE_RODEO` | Semantic View | Cortex Analyst NL analytics |
 | `RECEIPT_EXPLORER` | Streamlit | File-preview and KPI dashboard |
 
 ## Key Features
 
 - **AI_EXTRACT on TO_FILE** - one function call per receipt, no pre-OCR step
+- **Combined JSON schema** - entities + table extraction in one call, with
+  proper `column_ordering` for line items
+- **Per-field confidence** - `scores => TRUE` surfaces a quality signal that
+  drives the low-confidence review queue
+- **Tunable `scale_factor`** - `CALL SP_RECEIPT_EXTRACT_ALL(2.0)` for dense
+  or small-print receipts
+- **Git-native deploy** - `deploy_all.sql` pulls every step directly from
+  GitHub via `EXECUTE IMMEDIATE FROM @stage`; Streamlit source also served
+  from the git repo (no manual PUT)
 - **Heterogeneous inputs** - same query handles PDFs and image formats
-- **Directory table driven** - batch processing keyed off `DIRECTORY(@STAGE)`
 - **Side-by-side preview** - Streamlit shows the source file via presigned URL
   next to the extracted fields for auditability
 

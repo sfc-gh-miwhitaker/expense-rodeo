@@ -7,7 +7,7 @@ flowchart LR
     extract --> raw["RECEIPTS_RAW (VARIANT)"]
     raw --> fact["RECEIPTS (typed)"]
     fact --> views["V_SPEND_BY_CATEGORY<br/>V_SPEND_BY_VENDOR"]
-    fact --> sv["SV_RECEIPT_EXTRACTOR<br/>(Cortex Analyst)"]
+    fact --> sv["SV_EXPENSE_RODEO<br/>(Cortex Analyst)"]
     fact --> st["RECEIPT_EXPLORER<br/>(Streamlit)"]
     views --> st
 ```
@@ -21,7 +21,7 @@ flowchart LR
 | `RECEIPTS_RAW` | Table (VARIANT) | Audit trail for every `AI_EXTRACT` response |
 | `RECEIPTS` | Table (typed) | Fact table joined/filtered by dashboard and semantic view |
 | `V_SPEND_BY_CATEGORY`, `V_SPEND_BY_VENDOR` | Views | Pre-aggregated rollups for the dashboard |
-| `SV_RECEIPT_EXTRACTOR` | Semantic View | Cortex Analyst natural-language entry point |
+| `SV_EXPENSE_RODEO` | Semantic View | Cortex Analyst natural-language entry point |
 | `RECEIPT_EXPLORER` | Streamlit | File-preview, KPI, and aggregate UI |
 
 ## Why two tables?
