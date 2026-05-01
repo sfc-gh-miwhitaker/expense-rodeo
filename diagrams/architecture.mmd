@@ -1,0 +1,11 @@
+```mermaid
+flowchart LR
+    user["Finance user"] -->|PUT| stage["@RECEIPTS_STAGE"]
+    stage --> proc["SP_RECEIPT_EXTRACT_ALL"]
+    proc --> raw["RECEIPTS_RAW (VARIANT)"]
+    proc --> fact["RECEIPTS (typed)"]
+    fact --> views["V_SPEND_BY_CATEGORY<br/>V_SPEND_BY_VENDOR"]
+    fact --> sv["SV_RECEIPT_EXTRACTOR"]
+    fact --> st["RECEIPT_EXPLORER (Streamlit)"]
+    views --> st
+```
