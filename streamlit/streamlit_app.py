@@ -114,18 +114,14 @@ left, right = st.columns([2, 3])
 
 with left:
     st.subheader("Receipts")
-    st.dataframe(
-        filtered[["FILE_PATH", "VENDOR", "RECEIPT_DATE", "CATEGORY", "TOTAL_AMOUNT", "AVG_CONFIDENCE"]],
-        hide_index=True,
-        use_container_width=True,
-        column_config={
-            "TOTAL_AMOUNT": st.column_config.NumberColumn("Total", format="$%.2f"),
-            "RECEIPT_DATE": st.column_config.DateColumn("Date"),
-            "AVG_CONFIDENCE": st.column_config.ProgressColumn(
-                "Confidence", format="%.0f%%", min_value=0.0, max_value=1.0
-            ),
-        },
-    )
+    display_df = filtered[["FILE_PATH", "VENDOR", "RECEIPT_DATE", "CATEGORY", "TOTAL_AMOUNT", "AVG_CONFIDENCE"]].copy()
+    display_df["TOTAL_AMOUNT"] = display_df["TOTAL_AMOUNT"].map(lambda v: f"${v:,.2f}" if pd.notna(v) else "")
+    display_df["AVG_CONFIDENCE"] = display_df["AVG_CONFIDENCE"].map(lambda v: f"{v:.0%}" if pd.notna(v) else "")
+    display_df = display_df.rename(columns={
+        "FILE_PATH": "File", "VENDOR": "Vendor", "RECEIPT_DATE": "Date",
+        "CATEGORY": "Category", "TOTAL_AMOUNT": "Total", "AVG_CONFIDENCE": "Confidence",
+    })
+    st.dataframe(display_df, hide_index=True, use_container_width=True)
     choice = st.selectbox(
         "Select a receipt to inspect",
         options=filtered["FILE_PATH"].tolist() if not filtered.empty else [],
