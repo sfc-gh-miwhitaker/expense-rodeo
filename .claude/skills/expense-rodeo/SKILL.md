@@ -88,6 +88,16 @@ Use `V_LOW_CONFIDENCE_RECEIPTS` to find candidates that need re-extraction.
 
 ## Gotchas
 
+- **Streamlit version pinning** -- SiS warehouse runtimes default to an old
+  Streamlit when no `environment.yml` is shipped, which breaks `hide_index`,
+  `column_config`, and other newer APIs. We pin `streamlit=1.52.2` in
+  `streamlit/environment.yml`. If you PUT the app to a different location,
+  ship `environment.yml` alongside `streamlit_app.py`.
+- **`use_container_width` is deprecated** -- don't add it to new Streamlit
+  code; stretch is the default in 1.52+.
+- **`CREATE STREAMLIT ... ROOT_LOCATION` forces warehouse runtime** -- the
+  docs note that apps created with `ROOT_LOCATION` cannot use the container
+  runtime. Pin Streamlit via `environment.yml` to stay on a known version.
 - **Stage refresh** -- after `PUT`ing new files you **must** call
   `ALTER STAGE RECEIPTS_STAGE REFRESH` before the directory table returns the
   new rows. Missing this will silently process zero new files.
