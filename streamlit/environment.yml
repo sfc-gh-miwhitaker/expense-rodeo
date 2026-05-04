@@ -2,7 +2,6 @@ name: expense-rodeo
 channels:
   - snowflake
 dependencies:
-  - python=3.11
   - streamlit=1.52.2
-  - pandas=2.*
+  - pandas
   - snowflake-snowpark-python
