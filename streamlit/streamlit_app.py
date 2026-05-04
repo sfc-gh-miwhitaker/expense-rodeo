@@ -121,7 +121,7 @@ with left:
         "FILE_PATH": "File", "VENDOR": "Vendor", "RECEIPT_DATE": "Date",
         "CATEGORY": "Category", "TOTAL_AMOUNT": "Total", "AVG_CONFIDENCE": "Confidence",
     })
-    st.dataframe(display_df, hide_index=True)
+    st.dataframe(display_df)
     choice = st.selectbox(
         "Select a receipt to inspect",
         options=filtered["FILE_PATH"].tolist() if not filtered.empty else [],
@@ -158,7 +158,7 @@ with right:
             if isinstance(line_items, str):
                 import json
                 line_items = json.loads(line_items)
-            st.dataframe(pd.DataFrame(line_items), hide_index=True)
+            st.dataframe(pd.DataFrame(line_items))
         else:
             st.write("No line items extracted.")
 
